@@ -2,6 +2,7 @@
 
 #include "AlsAnimationInstanceProxy.h"
 #include "AlsCharacter.h"
+#include "AlsLocomotionInterface.h"
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "Curves/CurveFloat.h"
@@ -21,20 +22,42 @@ void UAlsAnimationInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	Character = Cast<AAlsCharacter>(GetOwningActor());
+	BaseActor = GetOwningActor();
 
 #if WITH_EDITOR
 	const auto* World{GetWorld()};
 
-	if (IsValid(World) && !World->IsGameWorld() && !IsValid(Character))
+	if (IsValid(World) && !World->IsGameWorld() && !IsValid(BaseActor))
 	{
 		// Use default objects for editor preview.
-		Character = GetMutableDefault<AAlsCharacter>();
+		BaseActor = GetMutableDefault<AAlsCharacter>();
 	}
 #endif
 
+
+	LocomotionInterface = Cast<IAlsLocomotionInterface>(BaseActor);
+	
+	if (LocomotionInterface == nullptr)
+	{
+		TArray<UActorComponent*> LocomotionComponents = BaseActor->GetComponentsByInterface(UAlsLocomotionInterface::StaticClass());
+
+		if (LocomotionComponents.Num() != 1)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Couldn't find correct amount of ALSLocomotionInterfaces!"))
+			return;
+		}
+
+		LocomotionInterface = Cast<IAlsLocomotionInterface>(LocomotionComponents[0]);
+	}
+
+	if (LocomotionInterface == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Couldn't find locomotion interface!"))
+	}
+	
 	const auto* Mesh{GetSkelMeshComponent()};
 
+	
 	if (IsValid(Mesh) && IsValid(Mesh->GetSkinnedAsset()))
 	{
 		const auto& ReferenceSkeleton{Mesh->GetSkinnedAsset()->GetRefSkeleton()};
@@ -82,7 +105,8 @@ void UAlsAnimationInstance::NativeBeginPlay()
 	Super::NativeBeginPlay();
 
 	ALS_ENSURE(IsValid(Settings));
-	ALS_ENSURE(IsValid(Character));
+	ensure(LocomotionInterface);
+	ALS_ENSURE(IsValid(BaseActor));
 }
 
 void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
@@ -93,7 +117,7 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 
 	Super::NativeUpdateAnimation(DeltaTime);
 
-	if (!IsValid(Settings) || !IsValid(Character))
+	if (!IsValid(Settings) || !IsValid(BaseActor) || LocomotionInterface == nullptr)
 	{
 		return;
 	}
@@ -106,30 +130,30 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 
 		// Manually synchronize mesh rotation with character rotation.
 
-		Mesh->MoveComponent(FVector::ZeroVector, ParentTransform.GetRotation() * Character->GetBaseRotationOffset(), false);
+		Mesh->MoveComponent(FVector::ZeroVector, ParentTransform.GetRotation() * LocomotionInterface->GetBaseRotationOffset_ALS(), false);
 
 		// Re-cache proxy transforms to match the modified mesh transform.
 
 		const auto& Proxy{GetProxyOnGameThread<FAnimInstanceProxy>()};
 		const_cast<FTransform&>(Proxy.GetComponentTransform()) = Mesh->GetComponentTransform();
 		const_cast<FTransform&>(Proxy.GetComponentRelativeTransform()) = Mesh->GetRelativeTransform();
-		const_cast<FTransform&>(Proxy.GetActorTransform()) = Character->GetActorTransform();
+		const_cast<FTransform&>(Proxy.GetActorTransform()) = BaseActor->GetActorTransform();
 	}
 
 #if WITH_EDITORONLY_DATA && ENABLE_DRAW_DEBUG
-	bDisplayDebugTraces = UAlsDebugUtility::ShouldDisplayDebugForActor(Character, UAlsConstants::TracesDebugDisplayName());
+	bDisplayDebugTraces = UAlsDebugUtility::ShouldDisplayDebugForActor(BaseActor, UAlsConstants::TracesDebugDisplayName());
 #endif
 
-	ViewMode = Character->GetViewMode();
-	LocomotionMode = Character->GetLocomotionMode();
-	RotationMode = Character->GetRotationMode();
-	Stance = Character->GetStance();
-	Gait = Character->GetGait();
-	OverlayMode = Character->GetOverlayMode();
+	ViewMode = LocomotionInterface->GetViewMode();
+	LocomotionMode = LocomotionInterface->GetLocomotionMode();
+	RotationMode = LocomotionInterface->GetRotationMode();
+	Stance = LocomotionInterface->GetStance();
+	Gait = LocomotionInterface->GetGait();
+	OverlayMode = LocomotionInterface->GetOverlayMode();
 
-	if (LocomotionAction != Character->GetLocomotionAction())
+	if (LocomotionAction != LocomotionInterface->GetLocomotionAction())
 	{
-		LocomotionAction = Character->GetLocomotionAction();
+		LocomotionAction = LocomotionInterface->GetLocomotionAction();
 		ResetGroundedEntryMode();
 	}
 
@@ -149,7 +173,7 @@ void UAlsAnimationInstance::NativeThreadSafeUpdateAnimation(const float DeltaTim
 
 	Super::NativeThreadSafeUpdateAnimation(DeltaTime);
 
-	if (!IsValid(Settings) || !IsValid(Character))
+	if (!IsValid(Settings) || !IsValid(BaseActor) || LocomotionInterface == nullptr)
 	{
 		return;
 	}
@@ -174,7 +198,7 @@ void UAlsAnimationInstance::NativePostUpdateAnimation()
 	                            STAT_UAlsAnimationInstance_NativePostUpdateAnimation, STATGROUP_Als)
 	TRACE_CPUPROFILER_EVENT_SCOPE(UAlsAnimationInstance::NativePostUpdateAnimation);
 
-	if (!IsValid(Settings) || !IsValid(Character))
+	if (!IsValid(Settings) || !IsValid(BaseActor) || LocomotionInterface == nullptr)
 	{
 		return;
 	}
@@ -221,7 +245,7 @@ FAlsControlRigInput UAlsAnimationInstance::GetControlRigInput() const
 
 void UAlsAnimationInstance::RefreshMovementBaseOnGameThread()
 {
-	const auto& BasedMovement{Character->GetBasedMovement()};
+	const auto& BasedMovement{LocomotionInterface->GetBasedMovement_ALS()};
 
 	if (BasedMovement.MovementBase != MovementBase.Primitive || BasedMovement.BoneName != MovementBase.BoneName)
 	{
@@ -336,7 +360,7 @@ void UAlsAnimationInstance::RefreshViewOnGameThread()
 {
 	check(IsInGameThread())
 
-	const auto& View{Character->GetViewState()};
+	const auto& View{LocomotionInterface->GetViewState()};
 
 	ViewState.Rotation = View.Rotation;
 	ViewState.YawSpeed = View.YawSpeed;
@@ -566,10 +590,13 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 {
 	check(IsInGameThread())
 
-	const auto* World{GetWorld()};
-	const auto ActorDeltaTime{IsValid(World) ? World->DeltaTimeSeconds * Character->CustomTimeDilation : 0.0f};
+	
 
-	const auto& Locomotion{Character->GetLocomotionState()};
+	const auto* World{GetWorld()};
+	const auto ActorDeltaTime{IsValid(World) ? World->DeltaTimeSeconds * BaseActor->CustomTimeDilation : 0.0f};
+
+	
+	const auto& Locomotion{LocomotionInterface->GetLocomotionState()};
 
 	LocomotionState.bHasInput = Locomotion.bHasInput;
 	LocomotionState.InputYawAngle = Locomotion.InputYawAngle;
@@ -582,11 +609,12 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 		                               ? (Locomotion.Velocity - Locomotion.PreviousVelocity) / ActorDeltaTime
 		                               : FVector::ZeroVector;
 
-	const auto* Movement{Character->GetCharacterMovement()};
 
-	LocomotionState.MaxAcceleration = Movement->GetMaxAcceleration();
-	LocomotionState.MaxBrakingDeceleration = Movement->GetMaxBrakingDeceleration();
-	LocomotionState.WalkableFloorZ = Movement->GetWalkableFloorZ();
+	//const auto* Movement{test->GetCharacterMovement()};
+
+	LocomotionState.MaxAcceleration = LocomotionInterface->GetMaxAcceleration();
+	LocomotionState.MaxBrakingDeceleration = LocomotionInterface->GetMaxBrakingDeceleration();
+	LocomotionState.WalkableFloorZ = LocomotionInterface->GetWalkableFloorZ();
 
 	LocomotionState.bMoving = Locomotion.bMoving;
 
@@ -605,10 +633,13 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 
 	LocomotionState.Scale = UE_REAL_TO_FLOAT(GetSkelMeshComponent()->GetComponentScale().Z);
 
-	const auto* Capsule{Character->GetCapsuleComponent()};
+	const auto* Capsule{LocomotionInterface->GetCapsuleComponent_ALS()};
 
-	LocomotionState.CapsuleRadius = Capsule->GetScaledCapsuleRadius();
-	LocomotionState.CapsuleHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	if (Capsule)
+	{
+		LocomotionState.CapsuleRadius = Capsule->GetScaledCapsuleRadius();
+		LocomotionState.CapsuleHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	}
 }
 
 void UAlsAnimationInstance::InitializeLean()
@@ -1006,7 +1037,7 @@ void UAlsAnimationInstance::RefreshGroundPrediction()
 	GetWorld()->SweepSingleByChannel(Hit, SweepStartLocation, SweepStartLocation + SweepVector,
 	                                 FQuat::Identity, Settings->InAir.GroundPredictionSweepChannel,
 	                                 FCollisionShape::MakeCapsule(LocomotionState.CapsuleRadius, LocomotionState.CapsuleHalfHeight),
-	                                 {__FUNCTION__, false, Character}, Settings->InAir.GroundPredictionSweepResponses);
+	                                 {__FUNCTION__, false, BaseActor}, Settings->InAir.GroundPredictionSweepResponses);
 
 	const auto bGroundValid{Hit.IsValidBlockingHit() && Hit.ImpactNormal.Z >= LocomotionState.WalkableFloorZ};
 
@@ -1788,7 +1819,7 @@ void UAlsAnimationInstance::RefreshRagdollingOnGameThread()
 
 	static constexpr auto ReferenceSpeed{1000.0f};
 
-	RagdollingState.FlailPlayRate = UAlsMath::Clamp01(UE_REAL_TO_FLOAT(Character->GetRagdollingState().Velocity.Size() / ReferenceSpeed));
+	RagdollingState.FlailPlayRate = UAlsMath::Clamp01(UE_REAL_TO_FLOAT(LocomotionInterface->GetRagdollingState().Velocity.Size() / ReferenceSpeed));
 }
 
 FPoseSnapshot& UAlsAnimationInstance::SnapshotFinalRagdollPose()

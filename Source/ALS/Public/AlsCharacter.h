@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AlsLocomotionInterface.h"
 #include "GameFramework/Character.h"
 #include "State/AlsLocomotionState.h"
 #include "State/AlsMantlingState.h"
@@ -8,6 +9,10 @@
 #include "State/AlsRollingState.h"
 #include "State/AlsViewState.h"
 #include "Utility/AlsGameplayTags.h"
+
+
+#include "GameFramework/CharacterMovementComponent.h"
+
 #include "AlsCharacter.generated.h"
 
 struct FAlsMantlingParameters;
@@ -19,9 +24,64 @@ class UAlsAnimationInstance;
 class UAlsMantlingSettings;
 
 UCLASS(AutoExpandCategories = ("Settings|Als Character", "Settings|Als Character|Desired State"))
-class ALS_API AAlsCharacter : public ACharacter
+class ALS_API AAlsCharacter : public ACharacter, public IAlsLocomotionInterface
 {
 	GENERATED_BODY()
+
+
+public:
+
+	// CUSTOM MOD: we inherit from the locomotion interface and implement these functions
+
+	virtual UCapsuleComponent* GetCapsuleComponent_ALS() const override
+	{
+		return GetCapsuleComponent();
+	}
+
+	virtual AActor* GetActor() override
+	{
+		return this;
+	}
+	
+	virtual const FGameplayTag& GetViewMode() const override;
+	virtual const FGameplayTag& GetLocomotionMode() const override;
+	virtual const FGameplayTag& GetRotationMode() const override;
+	virtual const FGameplayTag& GetStance() const override;
+	virtual const FGameplayTag& GetGait() const override;
+	virtual const FGameplayTag& GetOverlayMode() const override;
+
+	virtual const FAlsLocomotionState& GetLocomotionState() const override;
+	
+	virtual const FQuat GetBaseRotationOffset_ALS() const override
+	{
+		return GetBaseRotationOffset();
+	}
+
+	virtual const FGameplayTag& GetLocomotionAction() const override;
+	virtual const FBasedMovementInfo& GetBasedMovement_ALS() const override
+	{
+		return GetBasedMovement();
+	}
+
+	virtual const FAlsViewState& GetViewState() const override;
+
+	virtual const float GetMaxAcceleration() const override
+	{
+		return GetCharacterMovement()->GetMaxAcceleration();
+	};
+	virtual const float GetMaxBrakingDeceleration() const override
+	{
+		return GetCharacterMovement()->GetMaxBrakingDeceleration();
+	}
+	virtual const float GetWalkableFloorZ() const override
+	{
+		return GetCharacterMovement()->GetWalkableFloorZ();
+	}
+
+	virtual const FAlsRagdollingState& GetRagdollingState() const override;
+	
+
+	// END CUSTOM MOD
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Als Character")
@@ -153,8 +213,7 @@ private:
 	// View Mode
 
 public:
-	const FGameplayTag& GetViewMode() const;
-
+	
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewViewMode"))
 	void SetViewMode(const FGameplayTag& NewViewMode);
 
@@ -173,7 +232,6 @@ public:
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode = 0) override;
 
 public:
-	const FGameplayTag& GetLocomotionMode() const;
 
 protected:
 	void SetLocomotionMode(const FGameplayTag& NewLocomotionMode);
@@ -227,7 +285,6 @@ private:
 	// Rotation Mode
 
 public:
-	const FGameplayTag& GetRotationMode() const;
 
 protected:
 	void SetRotationMode(const FGameplayTag& NewRotationMode);
@@ -269,7 +326,6 @@ public:
 	virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
 
 public:
-	const FGameplayTag& GetStance() const;
 
 protected:
 	void SetStance(const FGameplayTag& NewStance);
@@ -297,7 +353,6 @@ private:
 	// Gait
 
 public:
-	const FGameplayTag& GetGait() const;
 
 protected:
 	void SetGait(const FGameplayTag& NewGait);
@@ -317,7 +372,6 @@ private:
 	// Overlay Mode
 
 public:
-	const FGameplayTag& GetOverlayMode() const;
 
 	UFUNCTION(BlueprintCallable, Category = "ALS|Character", Meta = (AutoCreateRefTerm = "NewOverlayMode"))
 	void SetOverlayMode(const FGameplayTag& NewOverlayMode);
@@ -341,8 +395,7 @@ protected:
 	// Locomotion Action
 
 public:
-	const FGameplayTag& GetLocomotionAction() const;
-
+	
 	void SetLocomotionAction(const FGameplayTag& NewLocomotionAction);
 
 protected:
@@ -379,7 +432,6 @@ public:
 	void CorrectViewNetworkSmoothing(const FRotator& NewTargetRotation, bool bRotationIsBaseRelative);
 
 public:
-	const FAlsViewState& GetViewState() const;
 
 private:
 	void RefreshView(float DeltaTime);
@@ -389,7 +441,6 @@ private:
 	// Locomotion
 
 public:
-	const FAlsLocomotionState& GetLocomotionState() const;
 
 private:
 	void SetDesiredVelocityYawAngle(float NewVelocityYawAngle);
@@ -535,7 +586,6 @@ protected:
 	// Ragdolling
 
 public:
-	const FAlsRagdollingState& GetRagdollingState() const;
 
 	bool IsRagdollingAllowedToStart() const;
 

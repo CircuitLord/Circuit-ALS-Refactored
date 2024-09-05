@@ -22,6 +22,9 @@
 #include "State/AlsTurnInPlaceState.h"
 #include "State/AlsViewAnimationState.h"
 #include "Utility/AlsGameplayTags.h"
+
+#include "AlsLocomotionInterface.h"
+
 #include "AlsAnimationInstance.generated.h"
 
 class UAlsLinkedAnimationInstance;
@@ -38,8 +41,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	TObjectPtr<UAlsAnimationInstanceSettings> Settings;
 
+	//UPROPERTY()
+	IAlsLocomotionInterface* LocomotionInterface;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
-	TObjectPtr<AAlsCharacter> Character;
+	TObjectPtr<AActor> BaseActor;
+	
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
+	//TObjectPtr<AAlsCharacter> Character;
 
 	// Used to indicate that the animation instance has not been updated for a long time
 	// and its current state may not be correct (such as foot location used in foot lock).
