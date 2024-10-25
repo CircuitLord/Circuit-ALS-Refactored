@@ -79,6 +79,13 @@ public:
 	}
 
 	virtual const FAlsRagdollingState& GetRagdollingState() const override;
+
+	FALSVRPlayerData VRPlayerData;
+	
+	virtual const FALSVRPlayerData& GetVRPlayerData() const override
+	{
+		return VRPlayerData;
+	};
 	
 
 	// END CUSTOM MOD

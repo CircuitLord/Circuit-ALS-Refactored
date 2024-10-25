@@ -157,6 +157,9 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 		ResetGroundedEntryMode();
 	}
 
+	
+	VRPlayerData = LocomotionInterface->GetVRPlayerData();
+
 	RefreshMovementBaseOnGameThread();
 	RefreshViewOnGameThread();
 	RefreshLocomotionOnGameThread();

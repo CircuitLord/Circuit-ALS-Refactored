@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FALSVRPlayerData.h"
 #include "GameplayTagContainer.h"
 #include "State/AlsLocomotionState.h"
 #include "UObject/Interface.h"
@@ -63,5 +64,7 @@ public:
 	virtual const float GetWalkableFloorZ() const = 0;
 
 	virtual const FAlsRagdollingState& GetRagdollingState() const = 0;
+
+	virtual const FALSVRPlayerData& GetVRPlayerData() const = 0;
 	
 };

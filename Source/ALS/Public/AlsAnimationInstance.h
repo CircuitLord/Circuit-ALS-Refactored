@@ -24,6 +24,7 @@
 #include "Utility/AlsGameplayTags.h"
 
 #include "AlsLocomotionInterface.h"
+#include "FALSVRPlayerData.h"
 
 #include "AlsAnimationInstance.generated.h"
 
@@ -65,6 +66,9 @@ protected:
 
 	mutable TArray<TFunction<void()>> DisplayDebugTracesQueue;
 #endif
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
+	FALSVRPlayerData VRPlayerData;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	FGameplayTag ViewMode{AlsViewModeTags::ThirdPerson};
@@ -110,6 +114,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	FAlsLocomotionAnimationState LocomotionState;
+	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", Transient)
 	FAlsLeanState LeanState;
