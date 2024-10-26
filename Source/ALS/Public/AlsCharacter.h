@@ -245,7 +245,7 @@ protected:
 
 	virtual void NotifyLocomotionModeChanged(const FGameplayTag& PreviousLocomotionMode);
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Als Character")
 	void OnLocomotionModeChanged(const FGameplayTag& PreviousLocomotionMode);
 
 	// Desired Aiming
@@ -298,7 +298,7 @@ protected:
 
 	virtual void NotifyRotationModeChanged(const FGameplayTag& PreviousRotationMode);
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Als Character")
 	void OnRotationModeChanged(const FGameplayTag& PreviousRotationMode);
 
 	void RefreshRotationMode();
@@ -408,7 +408,7 @@ public:
 protected:
 	virtual void NotifyLocomotionActionChanged(const FGameplayTag& PreviousLocomotionAction);
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Als Character")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Als Character")
 	void OnLocomotionActionChanged(const FGameplayTag& PreviousLocomotionAction);
 
 	// Input

@@ -613,11 +613,9 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 		                               : FVector::ZeroVector;
 
 
-	//const auto* Movement{test->GetCharacterMovement()};
-
 	LocomotionState.MaxAcceleration = LocomotionInterface->GetMaxAcceleration();
 	LocomotionState.MaxBrakingDeceleration = LocomotionInterface->GetMaxBrakingDeceleration();
-	LocomotionState.WalkableFloorZ = LocomotionInterface->GetWalkableFloorZ();
+	LocomotionState.WalkableFloorAngleCos = LocomotionInterface->GetWalkableFloorZ();
 
 	LocomotionState.bMoving = Locomotion.bMoving;
 
@@ -1042,7 +1040,7 @@ void UAlsAnimationInstance::RefreshGroundPrediction()
 	                                 FCollisionShape::MakeCapsule(LocomotionState.CapsuleRadius, LocomotionState.CapsuleHalfHeight),
 	                                 {__FUNCTION__, false, BaseActor}, Settings->InAir.GroundPredictionSweepResponses);
 
-	const auto bGroundValid{Hit.IsValidBlockingHit() && Hit.ImpactNormal.Z >= LocomotionState.WalkableFloorZ};
+	const auto bGroundValid{Hit.IsValidBlockingHit() && Hit.ImpactNormal.Z >= LocomotionState.WalkableFloorAngleCos};
 
 #if WITH_EDITORONLY_DATA && ENABLE_DRAW_DEBUG
 	if (bDisplayDebugTraces)
