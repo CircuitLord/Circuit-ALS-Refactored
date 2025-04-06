@@ -174,9 +174,9 @@ void UAlsAnimationInstance::NativeUpdateAnimation(const float DeltaTime)
 	RefreshFeetOnGameThread();
 	RefreshRagdollingOnGameThread();
 
-	if (!bPendingUpdate && IsValid(Character->GetSettings()) &&
+	if (!bPendingUpdate && IsValid(LocomotionInterface->GetSettings()) &&
 	    FVector::DistSquared(PreviousLocation, LocomotionState.Location) >
-	    FMath::Square(Character->GetSettings()->TeleportDistanceThreshold))
+	    FMath::Square(LocomotionInterface->GetSettings()->TeleportDistanceThreshold))
 	{
 		MarkTeleported();
 	}
@@ -657,9 +657,9 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	};
 	check(EnableListenServerSmoothingConsoleVariable != nullptr)
 
-	if (Movement->NetworkSmoothingMode == ENetworkSmoothingMode::Disabled ||
-	    (Character->GetLocalRole() != ROLE_SimulatedProxy &&
-	     !(Character->IsNetMode(NM_ListenServer) && EnableListenServerSmoothingConsoleVariable->GetBool())))
+	if (LocomotionInterface->GetNetworkSmoothingMode() == ENetworkSmoothingMode::Disabled ||
+	    (BaseActor->GetLocalRole() != ROLE_SimulatedProxy &&
+	     !(BaseActor->IsNetMode(NM_ListenServer) && EnableListenServerSmoothingConsoleVariable->GetBool())))
 	{
 		// If the network smoothing is disabled, use the regular actor transform.
 
@@ -670,7 +670,7 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	else if (GetSkelMeshComponent()->IsUsingAbsoluteRotation())
 	{
 		LocomotionState.Location = ActorTransform.TransformPosition(
-			MeshRelativeTransform.GetLocation() - Character->GetBaseTranslationOffset());
+			MeshRelativeTransform.GetLocation() - LocomotionInterface->GetBaseTranslationOffset_ALS());
 
 		LocomotionState.Rotation = ActorTransform.Rotator();
 		LocomotionState.RotationQuaternion = ActorTransform.GetRotation();
@@ -679,8 +679,8 @@ void UAlsAnimationInstance::RefreshLocomotionOnGameThread()
 	{
 		const auto SmoothTransform{
 			ActorTransform * FTransform{
-				MeshRelativeTransform.GetRotation() * Character->GetBaseRotationOffset().Inverse(),
-				MeshRelativeTransform.GetLocation() - Character->GetBaseTranslationOffset()
+				MeshRelativeTransform.GetRotation() * LocomotionInterface->GetBaseRotationOffset_ALS().Inverse(),
+				MeshRelativeTransform.GetLocation() - LocomotionInterface->GetBaseTranslationOffset_ALS()
 			}
 		};
 

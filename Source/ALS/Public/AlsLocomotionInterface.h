@@ -15,6 +15,8 @@
 
 #include "AlsLocomotionInterface.generated.h"
 
+class UAlsCharacterSettings;
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UAlsLocomotionInterface : public UInterface
@@ -33,6 +35,8 @@ public:
 
 	// some functions have _ALS post-fixes so their name doesn't conflict with base unreal functions
 
+	virtual TObjectPtr<UAlsCharacterSettings> GetSettings() const = 0;
+
 	virtual UCapsuleComponent* GetCapsuleComponent_ALS() const = 0;
 
 	virtual AActor* GetActor() = 0;
@@ -48,6 +52,7 @@ public:
 	
 
 	virtual const FQuat GetBaseRotationOffset_ALS() const = 0;
+	virtual const FVector GetBaseTranslationOffset_ALS() const = 0;
 	
 	virtual const FGameplayTag& GetLocomotionAction() const = 0;
 	virtual const FBasedMovementInfo& GetBasedMovement_ALS() const = 0;
@@ -64,6 +69,11 @@ public:
 	virtual const float GetWalkableFloorZ() const = 0;
 
 	virtual const FAlsRagdollingState& GetRagdollingState() const = 0;
+
+	virtual const ENetworkSmoothingMode GetNetworkSmoothingMode() const
+	{
+		return ENetworkSmoothingMode::Disabled;
+	}
 
 	virtual const FALSVRPlayerData& GetVRPlayerData() const = 0;
 	

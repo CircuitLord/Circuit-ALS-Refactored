@@ -48,7 +48,10 @@ AAlsCharacter::AAlsCharacter(const FObjectInitializer& ObjectInitializer) : Supe
 
 		// TODO Wait until the FPhysScene_Chaos::UpdateKinematicsOnDeferredSkelMeshes() function will be fixed in future engine versions.
 
-		// GetMesh()->bDeferKinematicBoneUpdate = true;
+		// TODO: uncomment for good perf
+		//GetMesh()->bDeferKinematicBoneUpdate = true;
+		//GetMesh()->KinematicBonesUpdateType = EKinematicBonesUpdateToPhysics::Type::SkipAllBones;
+		
 	}
 
 	AlsCharacterMovement = Cast<UAlsCharacterMovementComponent>(GetCharacterMovement());

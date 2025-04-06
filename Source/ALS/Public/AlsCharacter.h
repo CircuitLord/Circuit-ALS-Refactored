@@ -56,6 +56,10 @@ public:
 	{
 		return GetBaseRotationOffset();
 	}
+	virtual const FVector GetBaseTranslationOffset_ALS() const override
+	{
+		return GetBaseTranslationOffset();
+	}
 
 	virtual const FGameplayTag& GetLocomotionAction() const override;
 	virtual const FBasedMovementInfo& GetBasedMovement_ALS() const override
@@ -209,7 +213,12 @@ public:
 	virtual void Restart() override;
 
 public:
-	const UAlsCharacterSettings* GetSettings() const;
+	//const UAlsCharacterSettings* GetSettings() const;
+
+	virtual TObjectPtr<UAlsCharacterSettings> GetSettings() const override
+	{
+		return Settings;
+	}
 
 protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Als Character", Meta = (ReturnDisplayName = "Handled"))
@@ -667,10 +676,10 @@ private:
 	void DisplayDebugMantling(const UCanvas* Canvas, float Scale, float HorizontalLocation, float& VerticalLocation) const;
 };
 
-inline const UAlsCharacterSettings* AAlsCharacter::GetSettings() const
+/*inline const UAlsCharacterSettings* AAlsCharacter::GetSettings() const
 {
 	return Settings;
-}
+}*/
 
 inline const FGameplayTag& AAlsCharacter::GetViewMode() const
 {
